@@ -1,6 +1,6 @@
 [workspace]
 
 members = [
-    "ppt-sync",
+    "tec-sync",
     "libppt-sync"
 ]

@@ -21,7 +21,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 struct Context(CONTEXT);
 
 fn main() -> Result<()> {
-    let mut listener = PipeOptions::new("\\\\.\\pipe\\ppt-sync").single()?;
+    let mut listener = PipeOptions::new("\\\\.\\pipe\\tec-sync").single()?;
     println!();
 
     let (done, waiter) = channel();
@@ -29,7 +29,7 @@ fn main() -> Result<()> {
 
     std::thread::spawn(move || { let _: Result<()> = (|| loop {
         let mut connection = listener.wait()?;
-        listener = PipeOptions::new("\\\\.\\pipe\\ppt-sync").first(false).single()?;
+        listener = PipeOptions::new("\\\\.\\pipe\\tec-sync").first(false).single()?;
         let (notifier, wait) = channel();
         notifs.send(notifier)?;
         let done = done.clone();
@@ -50,7 +50,7 @@ fn main() -> Result<()> {
     })();});
 
     unsafe {
-        ppt_sync(waiter, conns);
+        tec_sync(waiter, conns);
     }
 
     Ok(())
@@ -71,7 +71,7 @@ macro_rules! w {
     };
 }
 
-fn find_ppt_process() -> Option<u32> {
+fn find_tec_process() -> Option<u32> {
     unsafe {
         let mut pids = [0; 4096];
         let mut used = 0;
@@ -99,7 +99,7 @@ fn find_ppt_process() -> Option<u32> {
                         if buffer[i] == 0 {
                             let s = std::ffi::OsString::from_wide(&buffer[..i]);
                             if let Some(s) = s.to_str() {
-                                if s == "puyopuyotetris.exe" {
+                                if s == "TetrisEffect-Win64-Shipping.exe" {
                                     CloseHandle(handle);
                                     return Some(process)
                                 }
@@ -122,10 +122,10 @@ unsafe fn wait_for_event() -> DEBUG_EVENT {
     event
 }
 
-unsafe fn ppt_sync(waiter: Receiver<()>, new: Receiver<Sender<()>>) {
+unsafe fn tec_sync(waiter: Receiver<()>, new: Receiver<Sender<()>>) {
     let pid;
     loop {
-        if let Some(p) = find_ppt_process() {
+        if let Some(p) = find_tec_process() {
             pid = p;
             break
         }
@@ -148,7 +148,7 @@ unsafe fn ppt_sync(waiter: Receiver<()>, new: Receiver<Sender<()>>) {
     let mut continue_kind = DBG_EXCEPTION_NOT_HANDLED;
 
     // this instruction is executed after the call that does window swap buffers
-    const INSTRUCTION_ADDRESS: u64 = 0x14025B8CC;
+    const INSTRUCTION_ADDRESS: u64 = 0x7FF6C69BF9B9;
 
     let mut clients = vec![];
     if let Ok(c) = new.recv(){
